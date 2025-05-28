@@ -1,308 +1,213 @@
+Тося, [29.05.2025 1:53]
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
-  <meta charset="utf-8">
-  <title>Студенческая практика</title>
+  <meta charset="UTF-8">
+  <title>Список студентов</title>
   <style>
-    body { font-family: Arial, sans-serif; margin: 20px; }
-    h1 { text-align: center; }
-    #form-section, #teacher-panel { margin-bottom: 20px; }
-    label { display: inline-block; width: 150px; margin-bottom: 5px; }
-    input[type="text"], select { width: 200px; }
-    button { margin-right: 5px; }
-    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-    th, td { border: 1px solid #ccc; padding: 5px; text-align: left; }
-    th { background-color: #eee; }
-    .actions-btn { margin-right: 5px; }
+    body { font-family: Arial; margin: 20px; }
+    .hidden { display: none; }
+    .role-selection button { margin-right: 10px; padding: 10px 20px; }
+    table, th, td { border: 1px solid #ccc; border-collapse: collapse; padding: 6px; }
+    th { background-color: #f0f0f0; }
   </style>
 </head>
 <body>
-  <h1>Студенческая практика</h1>
 
-  <div id="form-section">
-    <h2>Форма студента</h2>
+  <div class="role-selection">
+    <button onclick="showStudent()">Войти как студент</button>
+    <button onclick="showTeacher()">Войти как преподаватель</button>
+  </div>
+
+  <!-- Студенческая форма -->
+  <div id="studentFormBox" class="hidden">
+    <h2>Форма для студента</h2>
     <form id="studentForm">
-      <label>ФИО: <input type="text" id="fio" required></label><br>
-      <label>Курс: <input type="text" id="course" required></label><br>
-      <label>Группа: <input type="text" id="group" required></label><br>
-      <label>База: <input type="text" id="base"></label><br>
-      <label>Адрес: <input type="text" id="address"></label><br>
-      <label>Тел. базы: <input type="text" id="phoneBase"></label><br>
-      <label>Тел. студента: <input type="text" id="phoneStudent"></label><br>
-      <label>Руководитель: <input type="text" id="supervisor"></label><br>
-      <label>Вид практики: <input type="text" id="practiceType"></label><br>
-      <button type="submit">Добавить студента</button>
+      <input id="fio" placeholder="ФИО" required><br>
+      <input id="course" placeholder="Курс" required><br>
+      <input id="group" placeholder="Группа" required><br>
+      <input id="base" placeholder="База практики"><br>
+      <input id="baseAddress" placeholder="Адрес базы"><br>
+      <input id="basePhone" placeholder="Тел. базы"><br>
+      <input id="studentPhone" placeholder="Тел. студента"><br>
+      <input id="orgSupervisor" placeholder="Руководитель на базе"><br>
+      <input id="practiceType" placeholder="Вид практики"><br>
+      <button type="submit">Отправить</button>
     </form>
   </div>
 
-  <div id="teacher-panel">
-    <h2>Панель преподавателя</h2>
+  <!-- Интерфейс преподавателя -->
+  <div id="teacherBox" class="hidden">
+    <h2>Список студентов</h2>
+
     <div>
-      <input type="text" id="searchName" placeholder="Поиск по ФИО">
-      <select id="filterCourse">
-        <option value="">Все курсы</option>
-      </select>
-      <select id="filterGroup">
-        <option value="">Все группы</option>
-      </select>
-      <select id="filterPractice">
-        <option value="">Все виды практики</option>
-      </select>
-      <button id="btnExport">Экспорт JSON</button>
-      <button id="btnImport">Импорт JSON</button>
-      <input type="file" id="fileInput" accept=".json" style="display:none">
+      <input id="search" placeholder="Поиск по ФИО">
+      <select id="filterCourse"><option value="">Все курсы</option></select>
+      <select id="filterGroup"><option value="">Все группы</option></select>
+      <select id="filterPracticeType"><option value="">Все виды практики</option></select>
+      <button onclick="exportStudents()">Экспорт</button>
+      <input type="file" id="importFile" accept=".json">
+      <button onclick="importStudents()">Импорт</button>
     </div>
+
     <table id="studentTable">
       <thead>
         <tr>
-          <th>ФИО</th>
-          <th>Курс</th>
-          <th>Группа</th>
-          <th>База</th>
-          <th>Адрес</th>
-          <th>Тел. базы</th>
-          <th>Тел. студента</th>
-          <th>Руководитель</th>
-          <th>Вид практики</th>
-          <th>Действия</th>
+          <th>ФИО</th><th>Курс</th><th>Группа</th><th>База</th><th>Адрес</th>
+          <th>Тел. базы</th><th>Тел. студента</th><th>Руководитель</th><th>Вид практики</th><th>Действия</th>
         </tr>
       </thead>
       <tbody></tbody>
     </table>
   </div>
 
-  <script>
-    const SHEET_URL = 'https://script.google.com/macros/s/AKfycbwXzOh6H8OeY8KapfDP1LQTE4ytz_DlGdGBNeTkR6o0266Tn8MpCjnvOeSqV6zItwADXQ/exec';
-    let students = [];
+<script>
+  const SHEET_URL = "https://script.google.com/macros/s/_ТВОЙ_URL_ЗДЕСЬ_/exec";
+  let students = [];
 
-    // Fetch students from Google Sheets on load
-    function fetchStudents() {
-      fetch(SHEET_URL)
-        .then(response => response.json())
-        .then(data => {
-          students = data;
-          updateFilters();
-          updateTable();
-        })
-        .catch(error => console.error('Error fetching students:', error));
-    }
+  function showStudent() {
+    document.getElementById("studentFormBox").classList.remove("hidden");
+    document.getElementById("teacherBox").classList.add("hidden");
+  }
 
-    // Add new student via form
-    document.getElementById('studentForm').addEventListener('submit', function(e) {
-      e.preventDefault();
-      const newStudent = {
-        fio: document.getElementById('fio').value,
-        course: document.getElementById('course').value,
-        group: document.getElementById('group').value,
-        base: document.getElementById('base').value,
-        address: document.getElementById('address').value,
-        phoneBase: document.getElementById('phoneBase').value,
-        phoneStudent: document.getElementById('phoneStudent').value,
-        supervisor: document.getElementById('supervisor').value,
-        practiceType: document.getElementById('practiceType').value
-      };
-      fetch(SHEET_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain' },
-        body: JSON.stringify(newStudent)
-      })
-
-.then(response => {
-        if (!response.ok) throw new Error('Ошибка при отправке данных');
-        return response.json();
-      })
-      .then(data => {
-        students.push(newStudent);
-        updateFilters();
-        updateTable();
-        document.getElementById('studentForm').reset();
-      })
-      .catch(error => console.error('Error adding student:', error));
-    });
-
-    // Update filter dropdowns
-    function updateFilters() {
-      const courseSet = new Set();
-      const groupSet = new Set();
-      const practiceSet = new Set();
-      students.forEach(s => {
-        if (s.course) courseSet.add(s.course);
-        if (s.group) groupSet.add(s.group);
-        if (s.practiceType) practiceSet.add(s.practiceType);
-      });
-      const filterCourse = document.getElementById('filterCourse');
-      const filterGroup = document.getElementById('filterGroup');
-      const filterPractice = document.getElementById('filterPractice');
-      filterCourse.length = 1;
-      filterGroup.length = 1;
-      filterPractice.length = 1;
-      courseSet.forEach(course => {
-        const option = document.createElement('option');
-        option.value = course;
-        option.text = course;
-        filterCourse.add(option);
-      });
-      groupSet.forEach(group => {
-        const option = document.createElement('option');
-        option.value = group;
-        option.text = group;
-        filterGroup.add(option);
-      });
-      practiceSet.forEach(pt => {
-        const option = document.createElement('option');
-        option.value = pt;
-        option.text = pt;
-        filterPractice.add(option);
-      });
-    }
-
-    // Update table display based on filters and search
-    function updateTable() {
-      const tableBody = document.querySelector('#studentTable tbody');
-      tableBody.innerHTML = '';
-      const search = document.getElementById('searchName').value.toLowerCase();
-      const filterCourse = document.getElementById('filterCourse').value;
-      const filterGroup = document.getElementById('filterGroup').value;
-      const filterPractice = document.getElementById('filterPractice').value;
-
-      students.forEach((student, index) => {
-        if ((search === '' || student.fio.toLowerCase().includes(search)) &&
-            (filterCourse === '' || student.course === filterCourse) &&
-            (filterGroup === '' || student.group === filterGroup) &&
-            (filterPractice === '' || student.practiceType === filterPractice)
-           ) {
-          const row = tableBody.insertRow();
-          row.setAttribute('data-index', index);
-          row.insertCell().textContent = student.fio;
-          row.insertCell().textContent = student.course;
-          row.insertCell().textContent = student.group;
-          row.insertCell().textContent = student.base;
-          row.insertCell().textContent = student.address;
-          row.insertCell().textContent = student.phoneBase;
-          row.insertCell().textContent = student.phoneStudent;
-          row.insertCell().textContent = student.supervisor;
-          row.insertCell().textContent = student.practiceType;
-          const actionsCell = row.insertCell();
-          const editBtn = document.createElement('button');
-          editBtn.textContent = 'Редактировать';
-          editBtn.className = 'actions-btn';
-          editBtn.onclick = () => editStudent(index);
-          actionsCell.appendChild(editBtn);
-          const deleteBtn = document.createElement('button');
-          deleteBtn.textContent = 'Удалить';
-          deleteBtn.className = 'actions-btn';
-          deleteBtn.onclick = () => deleteStudent(index);
-          actionsCell.appendChild(deleteBtn);
-        }
-      });
-    }
-
-    // Search and filter events
-    document.getElementById('searchName').addEventListener('input', updateTable);
-    document.getElementById('filterCourse').addEventListener('change', updateTable);
-    document.getElementById('filterGroup').addEventListener('change', updateTable);
-    document.getElementById('filterPractice').addEventListener('change', updateTable);
-
-// Delete student (client-side only)
-    function deleteStudent(index) {
-      if (confirm('Удалить эту запись?')) {
-        students.splice(index, 1);
-        updateFilters();
-        updateTable();
-      }
-    }
-
-    // Edit student (client-side only)
-    function editStudent(index) {
-      const tableBody = document.querySelector('#studentTable tbody');
-      const row = tableBody.querySelector(tr[data-index='${index}']);
-      if (!row) return;
-      const cells = row.cells;
-      if (!row.classList.contains('editing')) {
-        row.classList.add('editing');
-        // Replace cells with input fields
-        for (let i = 0; i < cells.length - 1; i++) {
-          const cell = cells[i];
-          const value = cell.textContent;
-          cell.innerHTML = <input type="text" value="${value}">;
-        }
-        // Change buttons
-        const actionsCell = cells[cells.length - 1];
-        actionsCell.innerHTML = '';
-        const saveBtn = document.createElement('button');
-        saveBtn.textContent = 'Сохранить';
-        saveBtn.className = 'actions-btn';
-        saveBtn.onclick = () => {
-          const inputs = row.querySelectorAll('input');
-          if (inputs.length === cells.length - 1) {
-            students[index] = {
-              fio: inputs[0].value,
-              course: inputs[1].value,
-              group: inputs[2].value,
-              base: inputs[3].value,
-              address: inputs[4].value,
-              phoneBase: inputs[5].value,
-              phoneStudent: inputs[6].value,
-              supervisor: inputs[7].value,
-              practiceType: inputs[8].value
-            };
-            row.classList.remove('editing');
-            updateFilters();
-            updateTable();
-          }
-        };
-        actionsCell.appendChild(saveBtn);
-        const cancelBtn = document.createElement('button');
-        cancelBtn.textContent = 'Отмена';
-        cancelBtn.className = 'actions-btn';
-        cancelBtn.onclick = () => {
-          row.classList.remove('editing');
-          updateTable();
-        };
-        actionsCell.appendChild(cancelBtn);
-      }
-    }
-
-    // Export JSON of students
-    document.getElementById('btnExport').addEventListener('click', function() {
-      const dataStr = JSON.stringify(students, null, 2);
-      const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
-      const link = document.createElement('a');
-      link.href = dataUri;
-      link.download = 'students.json';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    });
-
-    // Import JSON of students
-    document.getElementById('btnImport').addEventListener('click', function() {
-      document.getElementById('fileInput').click();
-    });
-    document.getElementById('fileInput').addEventListener('change', function(event) {
-      const file = event.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        try {
-          const imported = JSON.parse(e.target.result);
-          if (Array.isArray(imported)) {
-            students = imported;
-            updateFilters();
-            updateTable();
-          } else {
-            alert('Неверный формат JSON');
-          }
-        } catch (err) {
-          alert('Ошибка чтения JSON');
-        }
-      };
-      reader.readAsText(file);
-    });
-
-    // Initial load
+  function showTeacher() {
+    document.getElementById("teacherBox").classList.remove("hidden");
+    document.getElementById("studentFormBox").classList.add("hidden");
     fetchStudents();
-  </script>
+  }
+
+  document.getElementById("studentForm")?.addEventListener("submit", function(e) {
+    e.preventDefault();
+    const student = {
+      "ФИО": fio.value.trim(),
+      "Курс": course.value.trim(),
+      "Группа": group.value.trim(),
+      "База": base.value.trim(),
+      "Адрес": baseAddress.value.trim(),
+      "Тел. базы": basePhone.value.trim(),
+      "Тел. студента": studentPhone.value.trim(),
+      "Руководитель": orgSupervisor.value.trim(),
+      "Вид практики": practiceType.value.trim()
+    };
+    fetch(SHEET_URL, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain" },
+      body: JSON.stringify(student)
+    })
+    .then(r => r.text())
+    .then(txt => {
+      if (txt === "OK") {
+        document.getElementById("studentFormBox").innerHTML = "<p>Спасибо! Ваши данные отправлены.</p>";
+      } else {
+        alert("Ошибка: " + txt);
+      }
+    });
+  });
+
+  function fetchStudents() {
+    fetch(SHEET_URL)
+      .then(r => r.json())
+      .then(data => {
+        students = data;
+        renderTable();
+        updateFilters();
+      });
+  }
+
+Тося, [29.05.2025 1:53]
+function renderTable() {
+    const search = searchInput().value.trim().toLowerCase();
+    const course = filterCourse.value;
+    const group = filterGroup.value;
+    const practice = filterPracticeType.value;
+    const tbody = document.querySelector("#studentTable tbody");
+    tbody.innerHTML = "";
+
+    students.forEach((s, i) => {
+      if (search && !s["ФИО"].toLowerCase().includes(search)) return;
+      if (course && s["Курс"] !== course) return;
+      if (group && s["Группа"] !== group) return;
+      if (practice && s["Вид практики"] !== practice) return;
+
+      const row = tbody.insertRow();
+      ["ФИО","Курс","Группа","База","Адрес","Тел. базы","Тел. студента","Руководитель","Вид практики"].forEach(key => {
+        row.insertCell().textContent = s[key] || "";
+      });
+      const actions = row.insertCell();
+      actions.innerHTML = <button onclick="editStudent(${i})">✏️</button>
+                           <button onclick="deleteStudent(${i})">🗑️</button>;
+    });
+  }
+
+  function updateFilters() {
+    const courses = [...new Set(students.map(s => s["Курс"]))].sort();
+    const groups = [...new Set(students.map(s => s["Группа"]))].sort();
+    const types  = [...new Set(students.map(s => s["Вид практики"]))].sort();
+
+    updateSelect(filterCourse, courses);
+    updateSelect(filterGroup, groups);
+    updateSelect(filterPracticeType, types);
+  }
+
+  function updateSelect(select, values) {
+    select.innerHTML = <option value="">Все</option> + values.map(v => <option>${v}</option>).join('');
+  }
+
+  function editStudent(i) {
+    const s = students[i];
+    const fio = prompt("ФИО", s["ФИО"]);
+    if (fio === null) return;
+    students[i]["ФИО"] = fio;
+    renderTable();
+  }
+
+  function deleteStudent(i) {
+    if (confirm("Удалить этого студента?")) {
+      students.splice(i, 1);
+      renderTable();
+    }
+  }
+
+  function exportStudents() {
+    const blob = new Blob([JSON.stringify(students, null, 2)], { type: "application/json" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = "students.json";
+    link.click();
+  }
+
+  function importStudents() {
+    const fileInput = document.getElementById("importFile");
+    const file = fileInput.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      try {
+        const imported = JSON.parse(e.target.result);
+        if (!Array.isArray(imported)) {
+          alert("Неверный формат файла.");
+          return;
+        }
+        students = imported;
+        renderTable();
+        updateFilters();
+      } catch (err) {
+        alert("Ошибка при импорте: " + err.message);
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  function searchInput() {
+    return document.getElementById("search") || { value: "" };
+  }
+
+  document.getElementById("search")?.addEventListener("input", renderTable);
+  document.getElementById("filterCourse")?.addEventListener("change", renderTable);
+  document.getElementById("filterGroup")?.addEventListener("change", renderTable);
+  document.getElementById("filterPracticeType")?.addEventListener("change", renderTable);
+</script>
 
 </body>
 </html>
